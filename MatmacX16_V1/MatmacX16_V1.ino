@@ -53,8 +53,12 @@
 // Smoothing factor for the signal
 #define SMOOTH_FACTOR 10
 
+int readings[MIDI_CONTROLS][SMOOTH_FACTOR] = {0};
+byte pos[MIDI_CONTROLS] = {0};
+int total[MIDI_CONTROLS] = {0};
+
 // Arrays to store values
-int potValue [MAX_POTS] = {0};
+int potValue [MAX_POTS] = {1};
 int prevPotsValues [MAX_POTS] = {0};
 
 void setup() {
@@ -78,25 +82,30 @@ void loop() {
 }
 
 // Select Mux input and read it
-int readAndMap(uint8_t channel)
+int readAndMap(byte channel)
 {
   digitalWrite(MUX_ADDRESS_SEL_1, bitRead(channel, 0));
   digitalWrite(MUX_ADDRESS_SEL_2, bitRead(channel, 1));
   digitalWrite(MUX_ADDRESS_SEL_3, bitRead(channel, 2));
   digitalWrite(MUX_ADDRESS_SEL_4, bitRead(channel, 3));
 
-  return map(smoothRead(), 0, 1023, 0, 127); // map the value from 0 - 1023 to 0 - 127 (MIDI range) 
+  return map(smoothRead(channel), 0, 1023, 0, 127); // map the value from 0 - 1023 to 0 - 127 (MIDI range)
 }
 
 // Smooths the signal by taking multiple measures and then averaging them
-int smoothRead() {
-  int total = 0;                    // the running total                  
-  for (byte i = 0;  i < SMOOTH_FACTOR; i++) {
-    total += analogRead(MUX_IN);
-  }
-
+int smoothRead(byte readIndex) {
+  // the running total of the current pot
+  total[readIndex] = total[readIndex] - readings[readIndex][pos[readIndex]];
+  // read from the sensor and stores
+  readings[readIndex][pos[readIndex]] = analogRead(MUX_IN);
+  // add the reading to the total
+  total[readIndex] += readings[readIndex][pos[readIndex]];
+  // Moves one psition in the array
+  pos[readIndex]++;
+  // resets the position
+  if (pos[readIndex] >= SMOOTH_FACTOR) pos[readIndex] = 0;
   // calculates the average:
-  int average = (total / SMOOTH_FACTOR);
+  int average = (total[readIndex] / SMOOTH_FACTOR);
   return average;
 }
 
@@ -107,8 +116,8 @@ void controlChange(byte channel, byte control, byte value) {
 }
 
 /*
- * Check all of the values, if the value of the selected pot has changed 
- * sends midi information to the computer, and pu
+   Check all of the values, if the value of the selected pot has changed
+   sends midi information to the computer, and pu
 */
 void sendMessages() {
   for (int i = 0; i < MAX_POTS; i++) {
@@ -120,10 +129,10 @@ void sendMessages() {
   }
 }
 
-/* 
- *  Dumps captured data from the array to the serial monitor
- *  This is for debugging and cheching if all the pots are working.
- */
+/*
+    Dumps captured data from the array to the serial monitor
+    This is for debugging and cheching if all the pots are working.
+*/
 void displayData()
 {
   Serial.println();
