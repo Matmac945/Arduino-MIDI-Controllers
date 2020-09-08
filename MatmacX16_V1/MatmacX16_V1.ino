@@ -1,7 +1,6 @@
 /*
    Copyright (c) 2020 Matías Macías Gómez
-   Original by Evan Kale taken from: https://github.com/evankale/ArduinoMidiFader/blob/master/ArduinoMidiFader.ino
-   Edited by Matías Macías Gómez github: https://github.com/Matmac945
+   Matías Macías Gómez github: https://github.com/Matmac945
 
    You can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
